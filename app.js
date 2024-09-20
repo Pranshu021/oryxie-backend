@@ -7,8 +7,24 @@ const config = require('./config/config');
 const routes = require('./routes');
 const mongoose = require('mongoose');
 const customError = require('./config/errors')
+const compression = require('compression');
+const { v4: uuidv4 } = require('uuid');
+const Logger = require('./utils/logger.js');
 
+
+const logger = new Logger();
 const app = express();
+app.use(bodyParser.json());
+app.use(compression());
+app.use(cors());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(helmet());
+app.use(mongoSanitize());
+
+process.on('SIGINT', () => {
+	logger.log('stopping the server', 'info');
+	process.exit();
+});
 
 // Setting env file according to current environment
 if(config.env) {
@@ -17,17 +33,16 @@ if(config.env) {
     require('dotenv').config({path: `./.env.dev`})
 }
 
-app.use(cors());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(helmet());
-app.use(mongoSanitize());
-
-// Route for users APIs
-app.use('/api/users', routes.userRouter)
-
-app.get('/api/test', (req, res) => {
-    res.json({ message: 'API working' });
+app.use((req, res, next) => {
+	req.identifier = uuidv4();
+	const logString = `a request has been made with the following uuid [${req.identifier}] ${req.url} ${req.headers['user-agent']} ${JSON.stringify(req.body)}`;
+	logger.log(logString, 'info');
+	next();
 });
+
+
+app.use(require('./routes'));
+
 
 const mongoURI = process.env.DB_CONNECTION_URI;
 
