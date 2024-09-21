@@ -1,21 +1,26 @@
-const dotenv = require('dotenv')
-
+require('dotenv').config();
 // Initialize environments
 let environments = {}
 
 environments.dev = {
-    'port': 3001,
+    'port': process.env.DEV_APP_PORT,
+    'dbURI': process.env.DEV_DB_CONNECTION_URI,
+    'appName': process.env.DEV_APP_NAME,
+    'logPath': '../log',
     'envName': 'dev',
 }
 
 environments.prod = {
-    'port': 4001,
+    'port': process.env.PROD_APP_PORT,
+    'dbURI': process.env.PROD_DB_CONNECTION_URI,
+    'appName': process.env.PROD_APP_NAME,
+    'logPath': '../log',
     'envName': 'prod',
 }
 
 
 // Current environment fetched from command given to run
-let currentEnv = process.env.NODE_ENV || ''
+let currentEnv = process.env.NODE_ENV || 'dev'
 
 // Checking if currentEnv exists in the above enironments directory
 let exportEnv = typeof (environments[currentEnv.trim().toLowerCase()]) === 'object' ? {
@@ -23,6 +28,5 @@ let exportEnv = typeof (environments[currentEnv.trim().toLowerCase()]) === 'obje
 } : {
     "env": environments.dev,
 };
-
 
 module.exports = exportEnv

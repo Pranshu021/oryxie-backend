@@ -12,10 +12,31 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: tru
+    required: true
   },
   location: {
     type: String,
+    required: false
+  },
+  movies_watched: {
+    type: Array,
+    required: false
+  },
+  shows_watched: {
+    type: Array,
+    required: false
+  },
+  last_login: {
+    type: Date,
+    required: false
+  },
+  createdAt: {
+    type: Date,
+    required: true,
+    default: Date.now
+  },
+  modifiedAt: {
+    type: Date,
     required: false
   }
 });
