@@ -1,122 +1,57 @@
+let serverErorr;
+let clientError;
+let databaseError;
 
+class CustomErrors extends Error {
+  constructor(message) {
+    super(message);
+    this.message = message;
+  }
 
-const { extend } = require('lodash').extend;
+  serverError = (message) => {
+    this.name = "ServerError";
+    (this.status = 500),
+      (this.message = message || "Internal Server Error"),
+      (this.userMessage = "Internal Server Error");
+  };
 
-module.exports = {
-	BadRequest: {
-		error: 'Bad Request',
-		status: 400,
-	},
+  clientError = (message) => {
+    this.name = "ClientError";
+    this.status = 400;
+    this.message = message || "Bad Request";
+  };
 
-	Unauthorized: {
-		error: 'Unauthorised',
-		status: 401,
-	},
+  databaseError = (message) => {
+    this.name = "DatabaseError";
+    this.status = 500;
+    this.message = message || "Database Connection Failed";
+  };
 
-	Forbidden: {
-		error: 'Forbidden',
-		status: 403,
-	},
+  miscError = (message) => {
+    this.name = "MiscError";
+    this.status = 500;
+    this.message = message || "An unknown error occurred";
+  };
 
-	NotFound: {
-		error: 'Not Found',
-		status: 404,
-	},
+  error(message, errorType) {
+    switch (errorType) {
+      case 'serverError':
+        this.serverError(message);
+        break;
+      case 'clientError':
+        this.clientError(message);
+        break;
+      case 'databaseError':
+        this.databaseError(message);
+        break;
+      case 'miscError':
+        this.miscError(message);
+        break;
+      default:
+        this.miscError(message);
+    }
+    throw this; 
+  }
+}
 
-	UnprocessableEntity: {
-		status: 422,
-		error: 'Unprocessable Entity',
-	},
-
-	InternalServerError: {
-		error: 'Internal Server Error',
-		status: 500,
-	},
-
-	Success: {
-		error: '',
-		status: 200,
-	},
-
-	onlyAdmin: extend({}, this.Forbidden, {
-		message: 'Only admins are allowed to do this!',
-	}),
-
-	NoPermesssion: extend({}, {
-		error: 'Forbidden',
-		status: 403,
-		message: 'You do not have permission to consume this resource!',
-	}),
-
-	invalidId: extend({}, this.BadRequest, {
-		message: 'Invalid Id parameter',
-	}),
-
-	invalidSearchTerm: extend({}, this.BadRequest, {
-		message: 'Invalid search term',
-	}),
-
-	missingAttr(attrs) {
-		return extend({}, this.BadRequest, {
-			message: `Attribute(s) (${attrs.join(',')}) seem(s) to be missing`,
-		});
-	},
-
-	unwantedAttr(attrs) {
-		return extend({}, this.BadRequest, {
-			message: `Attribute(s) (${attrs.join(',')}) can't be updated`,
-		});
-	},
-
-	uniqueAttr(attrs) {
-		return extend({}, this.BadRequest, {
-			message: `Attribute(s) [${attrs.join(',')}] must be unique`,
-		});
-	},
-
-	custom(msg) {
-		return extend({}, this.BadRequest, {
-			message: msg,
-		});
-	},
-
-	// REST
-
-	addFailure() {
-		return extend({}, this.BadRequest, {
-			message: 'Item WAS NOT added',
-		});
-	},
-
-	deleteFailure() {
-		return extend({}, this.BadRequest, {
-			message: 'Item WAS NOT deleted',
-		});
-	},
-
-	updateFailure() {
-		return extend({}, this.BadRequest, {
-			message: 'Item WAS NOT updated',
-		});
-	},
-
-	addSuccess() {
-		return extend({}, this.Success, {
-			message: 'Item added successfully',
-		});
-	},
-
-	deleteSuccess() {
-		return extend({}, this.Success, {
-			message: 'Item deleted successfully',
-		});
-	},
-
-	updateSuccess() {
-		return extend({}, this.Success, {
-			message: 'Item updated successfully',
-		});
-	},
-
-	empty: [],
-};
+module.exports = CustomErrors;

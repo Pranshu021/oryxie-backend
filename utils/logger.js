@@ -1,10 +1,8 @@
 const { createLogger, format, transports } = require('winston');
 const fs = require('fs');
 const DailyRotate = require('winston-daily-rotate-file');
-const config = require('../config/appConfig')
+const config = require('../config/config')
 
-
-const { env } = config.app;
 const logDir = 'log';
 
 let infoLogger;
@@ -20,7 +18,7 @@ class Logger {
 
 		infoLogger = createLogger({
 			// change level if in dev environment versus production
-			level: env === 'development' ? 'info' : 'debug',
+			level: config.env.envName === 'dev' ? 'info' : 'debug',
 			format: format.combine(
 				format.timestamp({
 					format: 'YYYY-MM-DD HH:mm:ss',
