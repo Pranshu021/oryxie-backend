@@ -38,7 +38,6 @@ app.use((req, res, next) => {
 
 app.use(require('./routes'));
 
-
 const mongoURI = config.env.dbURI;
 
 mongoose.connect(mongoURI).then(() => {
@@ -52,6 +51,3 @@ mongoose.connect(mongoURI).then(() => {
 	logger.log(logString, 'error')
 	customError.error(error, 'databaseError');
 });
-
-
-

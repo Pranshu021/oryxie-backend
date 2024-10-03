@@ -12,9 +12,6 @@ const connectDB = async() => {
             useUnifiedTopology: true,
         });
         console.log("[+] MongoDB connection successful")
-        const logString = 'MongoDB connection successful for backend operation'
-        
-        logger.log(logString, 'info')
     } catch(error) {
 
         console.error('[-] MongoDB connection Error:', error.message);
