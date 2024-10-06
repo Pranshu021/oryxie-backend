@@ -1,22 +1,26 @@
-const connectDB = require('../utils/db');
 const { User } = require('../models/')
 const { userSignUpSchema } = require('../validations')
 const { customErrorandLog } = require('../utils/helpers')
+const { userService } = require('../services')
 const bcrypt = require('bcrypt');
+const connectDB = require('../utils/db');
+
+
 require('dotenv').config();
 
 const testUser = async(req, res) => {
     try {
         connectDB();
+        let userNameExists = await userService.getUser({ username: "alex" })
+        console.log(userNameExists)
         return res.json({"message": "User API working"})
     }
     catch(error) {
-        console.log("hello")
+        console.log(error)
     }
 }
 
 const userSignUp = async(req, res) => {
-    connectDB();
     const validatedData = userSignUpSchema.validate(req.body)
     if(validatedData.error) {
         res.status(400).json({'error': "Something went wrong! Invalid Request"});
@@ -25,8 +29,8 @@ const userSignUp = async(req, res) => {
     const {username, email, password} = validatedData.value;
     console.log("Password: ", password)
 
-    let usernameExists = await User.findOne({ username });
-    let emailExists = await User.findOne({ email });
+    let usernameExists = await userService.getUser({ username });
+    let emailExists = await userService.getUser({ email });
     if(usernameExists) {
         res.status(400).json({"message": "User already exists"});
     } else if(emailExists) {
@@ -34,8 +38,8 @@ const userSignUp = async(req, res) => {
     } else {
         const salt = await bcrypt.genSalt(10);
         const hashedPass = await bcrypt.hash(password, salt);
-    
-        const user = new User({
+
+        const userCreate = await userService.signUpUser({
             username,
             email,
             password: hashedPass,
@@ -45,9 +49,13 @@ const userSignUp = async(req, res) => {
             last_login: "",
             created_at: new Date().toISOString(),
             modified_at: new Date().toISOString()
-        })
+        });
 
-        await user.save();
+        if(userCreate.error) {
+            res.status(500).json({'error': "Something went wrong! Invalid Request"});
+            customErrorandLog('DatabaseError', error, error, 'error');
+        }
+
         res.status(200).json({'message': 'User created successfully'})
     }
 }
