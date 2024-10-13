@@ -17,7 +17,7 @@ const signUpUser = async(userData) => {
 }
 
 const getUser = (searchParameters) => {
-    const user = User.findOne(searchParameters);
+    const user = User.find(searchParameters);
     return user;
 }
 
