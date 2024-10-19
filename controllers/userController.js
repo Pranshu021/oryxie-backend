@@ -31,8 +31,6 @@ const userSignUp = async (req, res) => {
     );
   }
   const { username, email, password } = validatedData.value;
-  console.log("Password: ", password);
-
   let usernameExists = await userService.getUser({ username });
   let emailExists = await userService.getUser({ email });
   if (usernameExists) {
@@ -68,22 +66,29 @@ const userLogin = async (req, res) => {
   const usernameOrEmail = req.body.username;
   const password = req.body.password;
 
+  console.log("username & password", usernameOrEmail, password)
+
   const userExists = await userService.getUser({
     $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
   });
 
-  if (userExists) {
+  if (userExists.length > 0) {
     bcrypt.compare(password, userExists[0].password, (err, result) => {
-      if (err)
+      // console.log("Error and Result", err, result)
+      if (err) {
+        res.status(500).json({ error: "Internal Server Error" });
+      } else if (!result) {
         res.status(403).json({ error: "Incorrect username or password" });
-      userData = {
-        username: userExists[0].username,
-      };
-      const token = jwt.sign(userData, process.env.DEV_JWT_ACCESS_TOKEN);
-      res.status(200).json({"message": "Login successful", "token": token});
+      } else {
+        userData = {
+          username: userExists[0].username,
+        };
+        const token = jwt.sign(userData, process.env.DEV_JWT_ACCESS_TOKEN, { expiresIn: '1h' });
+        res.status(200).json({ message: "Login successful", token: token });
+      }
     });
   } else {
-    res.status(401).json({ error: "User doesn't exist" });
+    res.status(401).json({ error: "Incorrect Username or Password" });
   }
 };
 
