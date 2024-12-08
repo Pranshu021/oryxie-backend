@@ -10,17 +10,22 @@ const compression = require('compression');
 const { v4: uuidv4 } = require('uuid');
 const Logger = require('./utils/logger.js');
 const CustomErrors = require('./utils/errors.js');
-
+const cookieParser = require('cookie-parser');
 
 
 const logger = new Logger();
 const app = express();
-app.use(bodyParser.json());
-app.use(compression());
-app.use(cors());
+app.use(helmet()); // Security headers should be set first.
+app.use(cors({ 
+    origin: 'http://localhost:3000',
+    credentials: true
+}));
+app.use(cookieParser()); // Cookie parser should be added before routes that need access to cookies.
+app.use(bodyParser.json()); // Body parser should be before routes that need access to JSON-encoded body data.
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(helmet());
-app.use(mongoSanitize());
+app.use(mongoSanitize()); // Sanitize inputs before any request handling.
+app.use(compression()); // Compression should come after middleware that alters requests.
+
 
 process.on('SIGINT', () => {
 	logger.log('stopping the server', 'info');
