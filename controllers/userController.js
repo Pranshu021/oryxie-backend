@@ -6,13 +6,14 @@ const bcrypt = require("bcrypt");
 const connectDB = require("../utils/db");
 const jwt = require("jsonwebtoken");
 const environment = process.env.NODE_ENV;
+const cookieParser = require('cookie-parser');
+
 require("dotenv").config();
 
 const testUser = async (req, res) => {
   try {
     connectDB();
     let userNameExists = await userService.getUser({ username: "alex" });
-    console.log(userNameExists);
     return res.json({ message: "User API working" });
   } catch (error) {
     console.log(error);
@@ -45,6 +46,7 @@ const userSignUp = async (req, res) => {
       username,
       email,
       password: hashedPass,
+      refresh_tokens: [],
       location: "",
       movies_watched: [],
       shows_watched: [],
@@ -66,14 +68,12 @@ const userLogin = async (req, res) => {
   const usernameOrEmail = req.body.username;
   const password = req.body.password;
 
-  console.log("username & password", usernameOrEmail, password)
-
   const userExists = await userService.getUser({
     $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
   });
 
   if (userExists.length > 0) {
-    bcrypt.compare(password, userExists[0].password, (err, result) => {
+    bcrypt.compare(password, userExists[0].password, async(err, result) => {
       // console.log("Error and Result", err, result)
       if (err) {
         res.status(500).json({ error: "Internal Server Error" });
@@ -83,8 +83,16 @@ const userLogin = async (req, res) => {
         userData = {
           username: userExists[0].username,
         };
-        const token = jwt.sign(userData, process.env.DEV_JWT_ACCESS_TOKEN, { expiresIn: '1h' });
-        res.status(200).json({ message: "Login successful", token: token });
+        const access_token = jwt.sign(userData, process.env.DEV_JWT_ACCESS_TOKEN, { expiresIn: '15m' });
+        const refresh_token = jwt.sign(userData, process.env.DEV_JWT_REFRESH_TOKEN, { expiresIn: '30d' });
+
+        res.cookie('refreshToken', refresh_token, {
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            httpOnly: true,
+            secure: false,
+        });
+
+        res.status(200).json({ message: "Login successful", token: access_token });
       }
     });
   } else {
@@ -92,8 +100,47 @@ const userLogin = async (req, res) => {
   }
 };
 
+const userTokenGenerate = async(req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+    if(!refreshToken || refreshToken === "") {
+        res.status(401).json({"error": "UNAUTHORIZED"})
+    } else {
+        jwt.verify(refreshToken, process.env.DEV_JWT_REFRESH_TOKEN, (err, user) => {
+            if(err) {
+                res.status(500).json({"error": "Something went wrong"}) 
+                const logString = "[-] Error while verifying refresh token - " + err;
+                customErrorandLog('serverError', err, logString, 'error');
+            }
+            
+            const new_token = jwt.sign({username: user.username}, process.env.DEV_JWT_ACCESS_TOKEN, {expiresIn: "1h"});
+            res.status(200).json({"message": "Token Refreshed", "token": new_token});
+        })
+    }
+}
+
+const userLogout = async(req, res) => {
+    res.cookie('refreshToken', '', {maxAge: 0, httpOnly: true, secure: false, sameSite: 'lax'});
+}
+
+
+const userDashboard = async (req, res) => {
+    res.status(200).json({"message": "Dashboard API is working"});
+}
+
 module.exports = {
   testUser,
   userSignUp,
   userLogin,
+  userDashboard,
+  userTokenGenerate,
+  userLogout
 };
+
+
+// Login Code
+
+        // const updateUserRefreshToken = await userService.updateUserRefreshToken(userExists[0].id, refresh_token);
+        // if(updateUserRefreshToken.error && updateUserRefreshToken.error !== "") {
+        //     res.status(500).json({"error": "Something went Wrong!"});
+        //     customErrorandLog("databaseError", updateUserRefreshToken.error, updateUserRefreshToken.error, "error");
+        // }

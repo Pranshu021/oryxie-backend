@@ -11,7 +11,6 @@ const signUpUser = async(userData) => {
         await user.save();
         return user
     } catch(error) {
-        console.log(error)
         return {"error": error}
     }
 }
@@ -21,9 +20,19 @@ const getUser = (searchParameters) => {
     return user;
 }
 
+const updateUserRefreshToken = (userId, refreshToken) => {
+    try {
+        const updatedUser = User.findByIdAndUpdate(userId, { $push: {refresh_tokens: refreshToken} });
+        return updatedUser;
+    } catch(error) {
+        return {"error": error}
+    }
+}
+
 const userService = {
     signUpUser,
-    getUser
+    getUser,
+    updateUserRefreshToken
 }
 
 module.exports = userService
